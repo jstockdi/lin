@@ -1,0 +1,114 @@
+# Linear CLI
+
+A Node.js CLI tool for interacting with the Linear API with multi-workspace support.
+
+## Installation
+
+```bash
+npm install
+```
+
+## Authentication
+
+Authenticate with your Linear API token for a specific workspace:
+
+```bash
+./bin/cli.js login <your-linear-api-token> --workspace=client1
+```
+
+Get your API token from Linear Settings → API → Personal API tokens.
+
+## Workspace Management
+
+The CLI supports multiple workspaces for different clients/projects:
+
+### Workspace Resolution (Priority Order)
+1. **Command flag**: `--workspace=client1` (highest priority)
+2. **Directory file**: `.linear-workspace` file in current or parent directory
+3. **Default workspace**: Set via `lin workspace set --global`
+4. **Fallback**: `default` workspace
+
+### Workspace Commands
+```bash
+# Set workspace for current directory
+lin workspace set client1
+
+# Set global default workspace
+lin workspace set client1 --global
+
+# Show current workspace
+lin workspace current
+
+# List all configured workspaces
+lin workspace list
+```
+
+## Usage
+
+### Basic Commands
+```bash
+# View an issue (uses workspace resolution)
+lin issue view APP-701
+
+# View with specific workspace (overrides directory/default)
+lin --workspace=client2 issue view APP-701
+
+# View comments
+lin comments view APP-701
+
+# Edit an issue
+lin issue edit APP-701 --summary="New title" --description="New description"
+```
+
+### Multi-Client Workflow Example
+```bash
+# Setup client workspaces
+cd ~/projects/client1
+lin workspace set client1
+lin login <client1-token> --workspace=client1
+
+cd ~/projects/client2  
+lin workspace set client2
+lin login <client2-token> --workspace=client2
+
+# Work with issues (auto-detects workspace from directory)
+cd ~/projects/client1
+lin issue view CLI-123    # Uses client1 workspace
+
+cd ~/projects/client2
+lin issue view API-456    # Uses client2 workspace
+
+# Override workspace anywhere
+lin --workspace=client1 issue view CLI-123
+```
+
+## Commands
+
+### Authentication
+- `lin login <api-token> [--workspace=name]` - Authenticate with Linear API
+
+### Issue Management  
+- `lin issue view <issue-id>` - View issue details
+- `lin issue edit <issue-id> --summary="..." --description="..."` - Edit issue
+
+### Comments
+- `lin comments view <issue-id>` - View comments for an issue
+
+### Workspace Management
+- `lin workspace current` - Show current workspace
+- `lin workspace list` - List all configured workspaces
+- `lin workspace set <name> [--global]` - Set workspace for directory or globally
+
+### Global Options
+- `--workspace <name>` - Override workspace for any command
+
+## Requirements
+
+- Node.js 20+ (package.json specifies 22+ but works with 20)
+- Linear API token with appropriate permissions for each workspace
+
+## Security
+
+API tokens are securely stored per workspace using the system keychain via the `keytar` library:
+- Service: `linear-cli`
+- Account: `workspace-{name}` (e.g., `workspace-client1`)
