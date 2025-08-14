@@ -144,4 +144,55 @@ export class LinearAPI {
       }
     };
   }
+
+  async createComment(issueId, body) {
+    const mutation = `
+      mutation CreateComment($input: CommentCreateInput!) {
+        commentCreate(input: $input) {
+          success
+          comment {
+            id
+            body
+            createdAt
+            user {
+              name
+              email
+            }
+          }
+        }
+      }
+    `;
+
+    const input = {
+      issueId,
+      body
+    };
+
+    return await this.query(mutation, { input });
+  }
+
+  async updateComment(commentId, body) {
+    const mutation = `
+      mutation UpdateComment($commentId: String!, $input: CommentUpdateInput!) {
+        commentUpdate(id: $commentId, input: $input) {
+          success
+          comment {
+            id
+            body
+            updatedAt
+            user {
+              name
+              email
+            }
+          }
+        }
+      }
+    `;
+
+    const input = {
+      body
+    };
+
+    return await this.query(mutation, { commentId, input });
+  }
 }

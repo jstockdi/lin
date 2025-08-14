@@ -82,6 +82,15 @@ lin --workspace=client2 issue view APP-701
 # View comments
 lin comments view APP-701
 
+# View comments with IDs (for editing)
+lin comments view APP-701 --show-ids
+
+# Add a comment
+lin comments add APP-701 "This looks good to me!"
+
+# Edit a comment (use --show-ids to get comment ID)
+lin comments edit comment-id "Updated comment text"
+
 # Edit an issue
 lin issue edit APP-701 --summary="New title" --description="New description"
 ```
@@ -118,7 +127,9 @@ lin --workspace=client1 issue view CLI-123
 - `lin issue edit <issue-id> --summary="..." --description="..."` - Edit issue
 
 ### Comments
-- `lin comments view <issue-id>` - View comments for an issue
+- `lin comments view <issue-id> [--show-ids]` - View comments for an issue
+- `lin comments add <issue-id> "<comment>"` - Add a comment to an issue
+- `lin comments edit <comment-id> "<comment>"` - Edit an existing comment
 
 ### Workspace Management
 - `lin workspace current` - Show current workspace
@@ -138,3 +149,7 @@ lin --workspace=client1 issue view CLI-123
 API tokens are securely stored per workspace using the system keychain via the `keytar` library:
 - Service: `linear-cli`
 - Account: `workspace-{name}` (e.g., `workspace-client1`)
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.

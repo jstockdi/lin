@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import { loginCommand } from '../src/commands/login.js';
 import { viewIssueCommand, editIssueCommand } from '../src/commands/issue.js';
-import { viewCommentsCommand } from '../src/commands/comments.js';
+import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
 import { listWorkspacesCommand, currentWorkspaceCommand, setWorkspaceCommand } from '../src/commands/workspace.js';
 import { WorkspaceManager } from '../src/workspace.js';
 
@@ -59,9 +59,31 @@ commentsCommand
   .command('view')
   .description('View comments for an issue')
   .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
+  .option('--show-ids', 'Show comment IDs for editing')
   .action(async (issueId, options, command) => {
     const globalOptions = command.parent.parent.opts();
-    await viewCommentsCommand(issueId, { workspace: globalOptions.workspace });
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await viewCommentsCommand(issueId, combinedOptions);
+  });
+
+commentsCommand
+  .command('add')
+  .description('Add a comment to an issue')
+  .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
+  .argument('<comment>', 'Comment text (supports markdown)')
+  .action(async (issueId, comment, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    await addCommentCommand(issueId, comment, { workspace: globalOptions.workspace });
+  });
+
+commentsCommand
+  .command('edit')
+  .description('Edit an existing comment')
+  .argument('<comment-id>', 'Comment ID (use "comments view --show-ids" to find IDs)')
+  .argument('<comment>', 'Updated comment text (supports markdown)')
+  .action(async (commentId, comment, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    await editCommentCommand(commentId, comment, { workspace: globalOptions.workspace });
   });
 
 const workspaceCommand = program
