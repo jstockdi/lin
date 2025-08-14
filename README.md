@@ -4,8 +4,30 @@ A Node.js CLI tool for interacting with the Linear API with multi-workspace supp
 
 ## Installation
 
+### Local Development
 ```bash
 npm install
+```
+
+### Global Installation
+To install `lin` globally and use it from anywhere on your system:
+
+```bash
+# Clone the repository
+git clone git@github.com:jstockdi/lin.git
+cd lin
+
+# Install dependencies and link globally
+npm install
+npm link
+
+# Now you can use 'lin' from anywhere
+lin --help
+```
+
+### Alternative: Install from npm (when published)
+```bash
+npm install -g lin-cli
 ```
 
 ## Authentication
@@ -13,6 +35,10 @@ npm install
 Authenticate with your Linear API token for a specific workspace:
 
 ```bash
+# If installed globally
+lin login <your-linear-api-token> --workspace=client1
+
+# If running locally
 ./bin/cli.js login <your-linear-api-token> --workspace=client1
 ```
 
