@@ -101,6 +101,11 @@ export class LinearAPI {
             identifier
             title
             description
+            priority
+            project {
+              id
+              name
+            }
           }
         }
       }
@@ -109,6 +114,9 @@ export class LinearAPI {
     const input = {};
     if (updates.title) input.title = updates.title;
     if (updates.description) input.description = updates.description;
+    if (updates.projectId) input.projectId = updates.projectId;
+    if (updates.priority !== undefined) input.priority = updates.priority;
+    if (updates.assigneeId) input.assigneeId = updates.assigneeId;
 
     return await this.query(mutation, { issueId, input });
   }
@@ -194,5 +202,79 @@ export class LinearAPI {
     };
 
     return await this.query(mutation, { commentId, input });
+  }
+
+  async getProjects(options = {}) {
+    const query = `
+      query GetProjects($first: Int, $includeArchived: Boolean) {
+        projects(first: $first, includeArchived: $includeArchived) {
+          nodes {
+            id
+            name
+            description
+            createdAt
+            updatedAt
+            archivedAt
+            url
+            lead {
+              name
+              email
+            }
+            teams {
+              nodes {
+                name
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      first: options.limit || 50,
+      includeArchived: options.includeArchived || false
+    };
+
+    return await this.query(query, variables);
+  }
+
+  async createIssue(input) {
+    const mutation = `
+      mutation CreateIssue($input: IssueCreateInput!) {
+        issueCreate(input: $input) {
+          success
+          issue {
+            id
+            identifier
+            title
+            description
+            url
+          }
+        }
+      }
+    `;
+
+    return await this.query(mutation, { input });
+  }
+
+  async getTeams(options = {}) {
+    const query = `
+      query GetTeams($first: Int) {
+        teams(first: $first) {
+          nodes {
+            id
+            name
+            key
+            description
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      first: options.limit || 50
+    };
+
+    return await this.query(query, variables);
   }
 }

@@ -2,8 +2,10 @@
 
 import { Command } from 'commander';
 import { loginCommand } from '../src/commands/login.js';
-import { viewIssueCommand, editIssueCommand } from '../src/commands/issue.js';
+import { viewIssueCommand, editIssueCommand, createIssueCommand } from '../src/commands/issue.js';
 import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
+import { viewProjectsCommand } from '../src/commands/projects.js';
+import { viewTeamsCommand } from '../src/commands/teams.js';
 import { listWorkspacesCommand, currentWorkspaceCommand, setWorkspaceCommand } from '../src/commands/workspace.js';
 import { WorkspaceManager } from '../src/workspace.js';
 
@@ -45,10 +47,28 @@ issueCommand
   .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
   .option('--summary <summary>', 'Update issue title/summary')
   .option('--description <description>', 'Update issue description')
+  .option('--project-id <projectId>', 'Update project assignment')
+  .option('--priority <priority>', 'Update priority (1-4, where 1 is urgent)')
+  .option('--assignee-id <assigneeId>', 'Update assignee')
   .action(async (issueId, options, command) => {
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };
     await editIssueCommand(issueId, combinedOptions);
+  });
+
+issueCommand
+  .command('create')
+  .description('Create a new issue')
+  .argument('<title>', 'Issue title')
+  .option('--team-id <teamId>', 'Team ID (required)')
+  .option('--description <description>', 'Issue description (supports markdown)')
+  .option('--project-id <projectId>', 'Project ID to assign issue to')
+  .option('--assignee-id <assigneeId>', 'User ID to assign the issue to')
+  .option('--priority <priority>', 'Issue priority (1-4, where 1 is urgent)')
+  .action(async (title, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await createIssueCommand(title, combinedOptions);
   });
 
 const commentsCommand = program
@@ -109,5 +129,42 @@ workspaceCommand
   .argument('<workspace>', 'Workspace name')
   .option('--global', 'Set as default workspace globally')
   .action(setWorkspaceCommand);
+
+const projectsCommand = program
+  .command('projects')
+  .description('Projects management commands');
+
+projectsCommand
+  .command('view')
+  .description('View all projects')
+  .option('--include-archived', 'Include archived projects')
+  .option('--limit <number>', 'Limit number of projects shown', '50')
+  .action(async (options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = { 
+      ...options, 
+      workspace: globalOptions.workspace,
+      limit: parseInt(options.limit, 10)
+    };
+    await viewProjectsCommand(combinedOptions);
+  });
+
+const teamsCommand = program
+  .command('teams')
+  .description('Teams management commands');
+
+teamsCommand
+  .command('view')
+  .description('View all teams')
+  .option('--limit <number>', 'Limit number of teams shown', '50')
+  .action(async (options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = { 
+      ...options, 
+      workspace: globalOptions.workspace,
+      limit: parseInt(options.limit, 10)
+    };
+    await viewTeamsCommand(combinedOptions);
+  });
 
 program.parse();

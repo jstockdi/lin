@@ -76,8 +76,20 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
       updates.description = options.description;
     }
     
+    if (options.projectId) {
+      updates.projectId = options.projectId;
+    }
+    
+    if (options.priority) {
+      updates.priority = parseInt(options.priority, 10);
+    }
+    
+    if (options.assigneeId) {
+      updates.assigneeId = options.assigneeId;
+    }
+    
     if (Object.keys(updates).length === 0) {
-      console.error('❌ No updates provided. Use --summary or --description options.');
+      console.error('❌ No updates provided. Use --summary, --description, --project-id, --priority, or --assignee-id options.');
       process.exit(1);
     }
     
@@ -91,6 +103,12 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
       if (updatedIssue.description) {
         console.log(`Description: ${updatedIssue.description}`);
       }
+      if (updatedIssue.priority !== undefined) {
+        console.log(`Priority: ${updatedIssue.priority}`);
+      }
+      if (updatedIssue.project) {
+        console.log(`Project: ${updatedIssue.project.name} (${updatedIssue.project.id})`);
+      }
     } else {
       console.error('❌ Failed to update issue.');
       process.exit(1);
@@ -98,6 +116,60 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
     
   } catch (error) {
     console.error('❌ Error updating issue:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function createIssueCommand(title, options = {}) {
+  try {
+    const { token, workspace } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+    
+    if (!options.teamId) {
+      console.error('❌ Team ID is required to create an issue. Use --team-id option.');
+      process.exit(1);
+    }
+    
+    const input = {
+      title,
+      teamId: options.teamId
+    };
+    
+    if (options.description) {
+      input.description = options.description;
+    }
+    
+    if (options.projectId) {
+      input.projectId = options.projectId;
+    }
+    
+    if (options.assigneeId) {
+      input.assigneeId = options.assigneeId;
+    }
+    
+    if (options.priority) {
+      input.priority = parseInt(options.priority, 10);
+    }
+    
+    console.log(`Creating issue "${title}" in workspace ${workspace}...`);
+    const result = await api.createIssue(input);
+    
+    if (result.issueCreate.success) {
+      const issue = result.issueCreate.issue;
+      console.log('✅ Issue created successfully!');
+      console.log(`Issue: ${issue.identifier}`);
+      console.log(`Title: ${issue.title}`);
+      console.log(`URL: ${issue.url}`);
+      if (issue.description) {
+        console.log(`Description: ${issue.description}`);
+      }
+    } else {
+      console.error('❌ Failed to create issue.');
+      process.exit(1);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error creating issue:', error.message);
     process.exit(1);
   }
 }

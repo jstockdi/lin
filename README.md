@@ -124,12 +124,19 @@ lin --workspace=client1 issue view CLI-123
 
 ### Issue Management  
 - `lin issue view <issue-id>` - View issue details
-- `lin issue edit <issue-id> --summary="..." --description="..."` - Edit issue
+- `lin issue edit <issue-id> [options]` - Edit issue (summary, description, project, priority, assignee)
+- `lin issue create "<title>" --team-id=<id> [options]` - Create a new issue
 
 ### Comments
 - `lin comments view <issue-id> [--show-ids]` - View comments for an issue
 - `lin comments add <issue-id> "<comment>"` - Add a comment to an issue
 - `lin comments edit <comment-id> "<comment>"` - Edit an existing comment
+
+### Projects
+- `lin projects view [--include-archived] [--limit=<number>]` - View all projects
+
+### Teams
+- `lin teams view [--limit=<number>]` - View all teams
 
 ### Workspace Management
 - `lin workspace current` - Show current workspace
