@@ -7,6 +7,7 @@ import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../s
 import { viewProjectsCommand } from '../src/commands/projects.js';
 import { viewTeamsCommand } from '../src/commands/teams.js';
 import { listWorkspacesCommand, currentWorkspaceCommand, setWorkspaceCommand } from '../src/commands/workspace.js';
+import { changelogCommand } from '../src/commands/changelog.js';
 import { WorkspaceManager } from '../src/workspace.js';
 
 const program = new Command();
@@ -14,7 +15,7 @@ const program = new Command();
 program
   .name('lin')
   .description('Linear CLI - Interact with Linear issues from the command line')
-  .version('1.0.0')
+  .version('0.1.3')
   .option('--workspace <name>', 'Specify workspace to use');
 
 program
@@ -65,6 +66,7 @@ issueCommand
   .option('--project-id <projectId>', 'Project ID to assign issue to')
   .option('--assignee-id <assigneeId>', 'User ID to assign the issue to')
   .option('--priority <priority>', 'Issue priority (1-4, where 1 is urgent)')
+  .option('--parent-id <parentId>', 'Parent issue ID to create this as a sub-issue')
   .action(async (title, options, command) => {
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };
@@ -135,8 +137,8 @@ const projectsCommand = program
   .description('Projects management commands');
 
 projectsCommand
-  .command('view')
-  .description('View all projects')
+  .command('list')
+  .description('List all projects')
   .option('--include-archived', 'Include archived projects')
   .option('--limit <number>', 'Limit number of projects shown', '50')
   .action(async (options, command) => {
@@ -154,8 +156,8 @@ const teamsCommand = program
   .description('Teams management commands');
 
 teamsCommand
-  .command('view')
-  .description('View all teams')
+  .command('list')
+  .description('List all teams')
   .option('--limit <number>', 'Limit number of teams shown', '50')
   .action(async (options, command) => {
     const globalOptions = command.parent.parent.opts();
@@ -166,5 +168,10 @@ teamsCommand
     };
     await viewTeamsCommand(combinedOptions);
   });
+
+program
+  .command('changelog')
+  .description('Show version history and release notes')
+  .action(changelogCommand);
 
 program.parse();

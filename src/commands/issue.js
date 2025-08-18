@@ -40,6 +40,10 @@ export async function viewIssueCommand(issueIdentifier, options = {}) {
     console.log(`Title: ${issue.title}`);
     console.log(`State: ${issue.state.name} (${issue.state.type})`);
     console.log(`Assignee: ${issue.assignee ? `${issue.assignee.name} (${issue.assignee.email})` : 'Unassigned'}`);
+    console.log(`Team: ${issue.team.name} (${issue.team.key}) - ID: ${issue.team.id}`);
+    if (issue.project) {
+      console.log(`Project: ${issue.project.name} - ID: ${issue.project.id}`);
+    }
     console.log(`Created: ${new Date(issue.createdAt).toLocaleString()}`);
     console.log(`URL: ${issue.url}`);
     
@@ -149,6 +153,16 @@ export async function createIssueCommand(title, options = {}) {
     
     if (options.priority) {
       input.priority = parseInt(options.priority, 10);
+    }
+    
+    if (options.parentId) {
+      // Resolve parent issue identifier to UUID
+      const parentResult = await api.searchIssues(options.parentId);
+      if (!parentResult.issues.nodes.length) {
+        console.error(`❌ Parent issue ${options.parentId} not found.`);
+        process.exit(1);
+      }
+      input.parentId = parentResult.issues.nodes[0].id;
     }
     
     console.log(`Creating issue "${title}" in workspace ${workspace}...`);

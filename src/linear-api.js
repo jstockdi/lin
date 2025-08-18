@@ -117,6 +117,7 @@ export class LinearAPI {
     if (updates.projectId) input.projectId = updates.projectId;
     if (updates.priority !== undefined) input.priority = updates.priority;
     if (updates.assigneeId) input.assigneeId = updates.assigneeId;
+    if (updates.parentId) input.parentId = updates.parentId;
 
     return await this.query(mutation, { issueId, input });
   }
@@ -136,6 +137,15 @@ export class LinearAPI {
           assignee {
             name
             email
+          }
+          team {
+            id
+            name
+            key
+          }
+          project {
+            id
+            name
           }
           createdAt
           url
