@@ -43,7 +43,7 @@ lin --version
 
 # Test specific commands
 lin issue create --help
-lin teams list
+lin team list
 ```
 
 ### Testing Sub-Issues

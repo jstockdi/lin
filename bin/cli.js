@@ -15,7 +15,7 @@ const program = new Command();
 program
   .name('lin')
   .description('Linear CLI - Interact with Linear issues from the command line')
-  .version('0.1.4')
+  .version('0.1.6')
   .option('--workspace <name>', 'Specify workspace to use');
 
 program
@@ -60,17 +60,17 @@ issueCommand
 issueCommand
   .command('create')
   .description('Create a new issue')
-  .argument('<title>', 'Issue title')
+  .option('--title <title>', 'Issue title (required)')
   .option('--team-id <teamId>', 'Team ID (required)')
   .option('--description <description>', 'Issue description (supports markdown)')
   .option('--project-id <projectId>', 'Project ID to assign issue to')
   .option('--assignee-id <assigneeId>', 'User ID to assign the issue to')
   .option('--priority <priority>', 'Issue priority (1-4, where 1 is urgent)')
   .option('--parent-id <parentId>', 'Parent issue ID (APP-123) to create this as a sub-issue. Not UUID')
-  .action(async (title, options, command) => {
+  .action(async (options, command) => {
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };
-    await createIssueCommand(title, combinedOptions);
+    await createIssueCommand(options.title, combinedOptions);
   });
 
 const commentsCommand = program
@@ -152,8 +152,8 @@ projectsCommand
   });
 
 const teamsCommand = program
-  .command('teams')
-  .description('Teams management commands');
+  .command('team')
+  .description('Team management commands');
 
 teamsCommand
   .command('list')
