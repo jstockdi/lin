@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2025-09-05
+
+### Added
+- Added `--parent-id` option to `lin issue edit` command to convert existing issues into sub-issues
+- Parent issue resolution now works for both create and edit operations
+
 ## [0.1.6] - 2025-08-27
 
 ### Changed

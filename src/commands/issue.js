@@ -92,8 +92,18 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
       updates.assigneeId = options.assigneeId;
     }
     
+    if (options.parentId) {
+      // Resolve parent issue identifier to UUID
+      const parentResult = await api.searchIssues(options.parentId);
+      if (!parentResult.issues.nodes.length) {
+        console.error(`❌ Parent issue ${options.parentId} not found.`);
+        process.exit(1);
+      }
+      updates.parentId = parentResult.issues.nodes[0].id;
+    }
+    
     if (Object.keys(updates).length === 0) {
-      console.error('❌ No updates provided. Use --summary, --description, --project-id, --priority, or --assignee-id options.');
+      console.error('❌ No updates provided. Use --summary, --description, --project-id, --priority, --assignee-id, or --parent-id options.');
       process.exit(1);
     }
     

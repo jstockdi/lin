@@ -51,6 +51,7 @@ issueCommand
   .option('--project-id <projectId>', 'Update project assignment')
   .option('--priority <priority>', 'Update priority (1-4, where 1 is urgent)')
   .option('--assignee-id <assigneeId>', 'Update assignee')
+  .option('--parent-id <parentId>', 'Parent issue ID (APP-123) to create this as a sub-issue. Not UUID')
   .action(async (issueId, options, command) => {
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };
