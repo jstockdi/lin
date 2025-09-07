@@ -1,6 +1,6 @@
 {
   "name": "linear-cli",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "description": "CLI tool for Linear API interactions",
   "main": "index.js",
   "type": "module",

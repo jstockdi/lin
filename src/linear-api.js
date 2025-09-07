@@ -1,4 +1,6 @@
 import axios from 'axios';
+import fs from 'fs/promises';
+import path from 'path';
 
 const LINEAR_API_BASE = 'https://api.linear.app/graphql';
 
@@ -286,5 +288,104 @@ export class LinearAPI {
     };
 
     return await this.query(query, variables);
+  }
+
+  async uploadFile(filePath) {
+    try {
+      const fileStats = await fs.stat(filePath);
+      const fileName = path.basename(filePath);
+      
+      const mimeTypeMap = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.md': 'text/markdown',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.xls': 'application/vnd.ms-excel'
+      };
+      
+      const fileExtension = path.extname(fileName).toLowerCase();
+      const contentType = mimeTypeMap[fileExtension] || 'application/octet-stream';
+
+      const mutation = `
+        mutation FileUpload($contentType: String!, $filename: String!, $size: Int!) {
+          fileUpload(contentType: $contentType, filename: $filename, size: $size) {
+            uploadFile {
+              uploadUrl
+              assetUrl
+              headers {
+                key
+                value
+              }
+            }
+          }
+        }
+      `;
+
+      const uploadData = await this.query(mutation, {
+        contentType,
+        filename: fileName,
+        size: fileStats.size
+      });
+
+      const { uploadUrl, assetUrl, headers: uploadHeaders } = uploadData.fileUpload.uploadFile;
+      
+      const fileBuffer = await fs.readFile(filePath);
+
+      // Build headers from Linear's response
+      const headers = {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000'
+      };
+      
+      // Add headers returned by Linear
+      if (uploadHeaders && uploadHeaders.length > 0) {
+        uploadHeaders.forEach(({ key, value }) => {
+          headers[key] = value;
+        });
+      }
+
+      await axios.put(uploadUrl, fileBuffer, {
+        headers,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+
+      return assetUrl;
+    } catch (error) {
+      throw new Error(`Failed to upload file: ${error.message}`);
+    }
+  }
+
+  async createAttachment(issueId, url, title, options = {}) {
+    const mutation = `
+      mutation CreateAttachment($input: AttachmentCreateInput!) {
+        attachmentCreate(input: $input) {
+          success
+          attachment {
+            id
+            title
+            url
+          }
+        }
+      }
+    `;
+
+    const input = {
+      issueId,
+      url,
+      title
+    };
+
+    if (options.subtitle) input.subtitle = options.subtitle;
+    if (options.iconUrl) input.iconUrl = options.iconUrl;
+    if (options.metadata) input.metadata = options.metadata;
+
+    return await this.query(mutation, { input });
   }
 }

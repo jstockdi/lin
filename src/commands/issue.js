@@ -102,30 +102,61 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
       updates.parentId = parentResult.issues.nodes[0].id;
     }
     
-    if (Object.keys(updates).length === 0) {
-      console.error('❌ No updates provided. Use --summary, --description, --project-id, --priority, --assignee-id, or --parent-id options.');
+    // Handle file attachment
+    if (options.attachment) {
+      try {
+        console.log(`📎 Uploading attachment: ${options.attachment}`);
+        const attachmentUrl = await api.uploadFile(options.attachment);
+        
+        const fileName = options.attachment.split('/').pop();
+        console.log('✅ File uploaded successfully!');
+        
+        console.log(`📎 Creating attachment: ${fileName}`);
+        const attachmentResult = await api.createAttachment(issue.id, attachmentUrl, fileName, {
+          subtitle: 'Uploaded via Linear CLI'
+        });
+        
+        if (attachmentResult.attachmentCreate.success) {
+          console.log('✅ Attachment created successfully!');
+        } else {
+          console.error('❌ Failed to create attachment in Linear');
+          process.exit(1);
+        }
+      } catch (error) {
+        console.error(`❌ Failed to upload attachment: ${error.message}`);
+        process.exit(1);
+      }
+    }
+    
+    if (Object.keys(updates).length === 0 && !options.attachment) {
+      console.error('❌ No updates provided. Use --summary, --description, --project-id, --priority, --assignee-id, --parent-id, or --attachment options.');
       process.exit(1);
     }
     
-    console.log(`Updating issue ${issueIdentifier} in workspace ${workspace}...`);
-    const result = await api.updateIssue(issue.id, updates);
-    
-    if (result.issueUpdate.success) {
-      console.log('✅ Issue updated successfully!');
-      const updatedIssue = result.issueUpdate.issue;
-      console.log(`Title: ${updatedIssue.title}`);
-      if (updatedIssue.description) {
-        console.log(`Description: ${updatedIssue.description}`);
+    // Only update issue if there are actual field updates
+    if (Object.keys(updates).length > 0) {
+      console.log(`Updating issue ${issueIdentifier} in workspace ${workspace}...`);
+      const result = await api.updateIssue(issue.id, updates);
+      
+      if (result.issueUpdate.success) {
+        console.log('✅ Issue updated successfully!');
+        const updatedIssue = result.issueUpdate.issue;
+        console.log(`Title: ${updatedIssue.title}`);
+        if (updatedIssue.description) {
+          console.log(`Description: ${updatedIssue.description}`);
+        }
+        if (updatedIssue.priority !== undefined) {
+          console.log(`Priority: ${updatedIssue.priority}`);
+        }
+        if (updatedIssue.project) {
+          console.log(`Project: ${updatedIssue.project.name} (${updatedIssue.project.id})`);
+        }
+      } else {
+        console.error('❌ Failed to update issue.');
+        process.exit(1);
       }
-      if (updatedIssue.priority !== undefined) {
-        console.log(`Priority: ${updatedIssue.priority}`);
-      }
-      if (updatedIssue.project) {
-        console.log(`Project: ${updatedIssue.project.name} (${updatedIssue.project.id})`);
-      }
-    } else {
-      console.error('❌ Failed to update issue.');
-      process.exit(1);
+    } else if (options.attachment) {
+      console.log('✅ Attachment operation completed!');
     }
     
   } catch (error) {

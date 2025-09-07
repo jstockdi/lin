@@ -15,7 +15,7 @@ const program = new Command();
 program
   .name('lin')
   .description('Linear CLI - Interact with Linear issues from the command line')
-  .version('0.1.6')
+  .version('0.1.8')
   .option('--workspace <name>', 'Specify workspace to use');
 
 program
@@ -52,6 +52,7 @@ issueCommand
   .option('--priority <priority>', 'Update priority (1-4, where 1 is urgent)')
   .option('--assignee-id <assigneeId>', 'Update assignee')
   .option('--parent-id <parentId>', 'Parent issue ID (APP-123) to create this as a sub-issue. Not UUID')
+  .option('--attachment <filePath>', 'Upload and attach a file to the issue')
   .action(async (issueId, options, command) => {
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };

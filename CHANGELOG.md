@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2025-09-07
+
+### Added
+- Added `--attachment <filePath>` option to `lin issue edit` command
+- File upload support for various file types (images, PDFs, documents, spreadsheets)
+- Automatic file upload to Linear's private cloud storage
+- Proper attachment creation in Linear's attachment system
+- Support for Excel files (.xlsx, .xls) and other common file formats
+
 ## [0.1.7] - 2025-09-05
 
 ### Added
