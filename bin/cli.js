@@ -15,7 +15,7 @@ const program = new Command();
 program
   .name('lin')
   .description('Linear CLI - Interact with Linear issues from the command line')
-  .version('0.1.8')
+  .version('0.1.9')
   .option('--workspace <name>', 'Specify workspace to use');
 
 program
@@ -75,11 +75,11 @@ issueCommand
     await createIssueCommand(options.title, combinedOptions);
   });
 
-const commentsCommand = program
-  .command('comments')
-  .description('Comments management commands');
+const commentCommand = program
+  .command('comment')
+  .description('Comment management commands');
 
-commentsCommand
+commentCommand
   .command('view')
   .description('View comments for an issue')
   .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
@@ -90,7 +90,7 @@ commentsCommand
     await viewCommentsCommand(issueId, combinedOptions);
   });
 
-commentsCommand
+commentCommand
   .command('add')
   .description('Add a comment to an issue')
   .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
@@ -100,10 +100,10 @@ commentsCommand
     await addCommentCommand(issueId, comment, { workspace: globalOptions.workspace });
   });
 
-commentsCommand
+commentCommand
   .command('edit')
   .description('Edit an existing comment')
-  .argument('<comment-id>', 'Comment ID (use "comments view --show-ids" to find IDs)')
+  .argument('<comment-id>', 'Comment ID (use "comment view --show-ids" to find IDs)')
   .argument('<comment>', 'Updated comment text (supports markdown)')
   .action(async (commentId, comment, options, command) => {
     const globalOptions = command.parent.parent.opts();
@@ -134,11 +134,11 @@ workspaceCommand
   .option('--global', 'Set as default workspace globally')
   .action(setWorkspaceCommand);
 
-const projectsCommand = program
-  .command('projects')
-  .description('Projects management commands');
+const projectCommand = program
+  .command('project')
+  .description('Project management commands');
 
-projectsCommand
+projectCommand
   .command('list')
   .description('List all projects')
   .option('--include-archived', 'Include archived projects')
