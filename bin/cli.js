@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import { loginCommand } from '../src/commands/login.js';
 import { viewIssueCommand, editIssueCommand, createIssueCommand } from '../src/commands/issue.js';
 import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
-import { viewProjectsCommand } from '../src/commands/projects.js';
+import { viewProjectsCommand, createProjectCommand, viewProjectCommand, editProjectCommand, listProjectUpdatesCommand, addProjectUpdateCommand, editProjectUpdateCommand, deleteProjectUpdateCommand } from '../src/commands/projects.js';
 import { viewTeamsCommand } from '../src/commands/teams.js';
 import { listUsersCommand } from '../src/commands/users.js';
 import { listWorkspacesCommand, currentWorkspaceCommand, setWorkspaceCommand } from '../src/commands/workspace.js';
@@ -146,12 +146,91 @@ projectCommand
   .option('--limit <number>', 'Limit number of projects shown', '50')
   .action(async (options, command) => {
     const globalOptions = command.parent.parent.opts();
-    const combinedOptions = { 
-      ...options, 
+    const combinedOptions = {
+      ...options,
       workspace: globalOptions.workspace,
       limit: parseInt(options.limit, 10)
     };
     await viewProjectsCommand(combinedOptions);
+  });
+
+projectCommand
+  .command('create')
+  .description('Create a new project')
+  .option('--name <name>', 'Project name (required)')
+  .option('--description <description>', 'Project description')
+  .option('--team-id <teamId>', 'Team ID to associate with the project')
+  .action(async (options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await createProjectCommand(combinedOptions);
+  });
+
+projectCommand
+  .command('view')
+  .description('View project details')
+  .argument('<project-id>', 'Project ID')
+  .action(async (projectId, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    await viewProjectCommand(projectId, { workspace: globalOptions.workspace });
+  });
+
+projectCommand
+  .command('edit')
+  .description('Edit a project')
+  .argument('<project-id>', 'Project ID')
+  .option('--name <name>', 'Update project name')
+  .option('--description <description>', 'Update project description')
+  .action(async (projectId, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await editProjectCommand(projectId, combinedOptions);
+  });
+
+const projectUpdateCommand = projectCommand
+  .command('update')
+  .description('Project update management commands');
+
+projectUpdateCommand
+  .command('list')
+  .description('List updates for a project')
+  .argument('<project-id>', 'Project ID')
+  .action(async (projectId, options, command) => {
+    const globalOptions = command.parent.parent.parent.opts();
+    await listProjectUpdatesCommand(projectId, { workspace: globalOptions.workspace });
+  });
+
+projectUpdateCommand
+  .command('add')
+  .description('Add an update to a project')
+  .argument('<project-id>', 'Project ID')
+  .option('--body <body>', 'Update body text (required)')
+  .option('--health <health>', 'Project health: onTrack, atRisk, or offTrack')
+  .action(async (projectId, options, command) => {
+    const globalOptions = command.parent.parent.parent.opts();
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await addProjectUpdateCommand(projectId, combinedOptions);
+  });
+
+projectUpdateCommand
+  .command('edit')
+  .description('Edit a project update')
+  .argument('<update-id>', 'Project update ID')
+  .option('--body <body>', 'Updated body text')
+  .option('--health <health>', 'Updated health: onTrack, atRisk, or offTrack')
+  .action(async (updateId, options, command) => {
+    const globalOptions = command.parent.parent.parent.opts();
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await editProjectUpdateCommand(updateId, combinedOptions);
+  });
+
+projectUpdateCommand
+  .command('delete')
+  .description('Delete a project update')
+  .argument('<update-id>', 'Project update ID')
+  .action(async (updateId, options, command) => {
+    const globalOptions = command.parent.parent.parent.opts();
+    await deleteProjectUpdateCommand(updateId, { workspace: globalOptions.workspace });
   });
 
 const teamsCommand = program

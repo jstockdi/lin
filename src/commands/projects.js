@@ -91,3 +91,226 @@ export async function viewProjectsCommand(options = {}) {
     process.exit(1);
   }
 }
+
+export async function createProjectCommand(options = {}) {
+  try {
+    if (!options.name) {
+      console.error('❌ --name is required');
+      process.exit(1);
+    }
+
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const input = { name: options.name };
+    if (options.description) input.description = options.description;
+    if (options.teamId) input.teamIds = [options.teamId];
+
+    const result = await api.createProject(input);
+    const project = result.projectCreate.project;
+
+    console.log(`\n✅ Project created successfully`);
+    console.log(`  Name:  ${project.name}`);
+    console.log(`  ID:    ${project.id}`);
+    if (project.description) console.log(`  Desc:  ${project.description}`);
+    console.log(`  URL:   ${project.url}`);
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error creating project:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function viewProjectCommand(projectId, options = {}) {
+  try {
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const result = await api.getProject(projectId);
+    const project = result.project;
+
+    if (!project) {
+      console.error(`❌ Project not found: ${projectId}`);
+      process.exit(1);
+    }
+
+    console.log(`\n📁 Project: ${project.name}`);
+    console.log('');
+    console.log(`  ID:          ${project.id}`);
+    console.log(`  State:       ${project.state || 'N/A'}`);
+    console.log(`  Lead:        ${project.lead ? `${project.lead.name} (${project.lead.email})` : 'None'}`);
+    console.log(`  Teams:       ${project.teams.nodes.length > 0 ? project.teams.nodes.map(t => t.name).join(', ') : 'None'}`);
+    console.log(`  Start date:  ${project.startDate || 'Not set'}`);
+    console.log(`  Target date: ${project.targetDate || 'Not set'}`);
+    console.log(`  Created:     ${new Date(project.createdAt).toLocaleDateString()}`);
+    console.log(`  Updated:     ${new Date(project.updatedAt).toLocaleDateString()}`);
+    console.log(`  URL:         ${project.url}`);
+    if (project.description) {
+      console.log('');
+      console.log(`  Description:`);
+      console.log(`  ${project.description}`);
+    }
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error viewing project:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function editProjectCommand(projectId, options = {}) {
+  try {
+    const input = {};
+    if (options.name) input.name = options.name;
+    if (options.description) input.description = options.description;
+
+    if (Object.keys(input).length === 0) {
+      console.error('❌ No updates provided. Use --name or --description to update the project.');
+      process.exit(1);
+    }
+
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const result = await api.updateProject(projectId, input);
+    const project = result.projectUpdate.project;
+
+    console.log(`\n✅ Project updated successfully`);
+    console.log(`  Name:  ${project.name}`);
+    console.log(`  ID:    ${project.id}`);
+    if (project.description) console.log(`  Desc:  ${project.description}`);
+    console.log(`  URL:   ${project.url}`);
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error updating project:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function listProjectUpdatesCommand(projectId, options = {}) {
+  try {
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const result = await api.getProjectUpdates(projectId);
+    const project = result.project;
+
+    if (!project) {
+      console.error(`❌ Project not found: ${projectId}`);
+      process.exit(1);
+    }
+
+    const updates = project.projectUpdates.nodes;
+
+    if (!updates.length) {
+      console.log(`\n📋 No updates found for project "${project.name}"`);
+      return;
+    }
+
+    console.log(`\n📋 Updates for project "${project.name}"`);
+    console.log('');
+
+    updates.forEach((update, index) => {
+      console.log(`--- Update ${index + 1} ---`);
+      console.log(`  ID:      ${update.id}`);
+      console.log(`  Health:  ${update.health || 'N/A'}`);
+      console.log(`  Author:  ${update.user ? update.user.name : 'Unknown'}`);
+      console.log(`  Created: ${new Date(update.createdAt).toLocaleDateString()}`);
+      if (update.updatedAt !== update.createdAt) {
+        console.log(`  Updated: ${new Date(update.updatedAt).toLocaleDateString()}`);
+      }
+      console.log(`  Body:    ${update.body}`);
+      console.log('');
+    });
+
+    console.log(`Found ${updates.length} update${updates.length === 1 ? '' : 's'}`);
+  } catch (error) {
+    console.error('❌ Error fetching project updates:', error.message);
+    process.exit(1);
+  }
+}
+
+const VALID_HEALTH_VALUES = ['onTrack', 'atRisk', 'offTrack'];
+
+export async function addProjectUpdateCommand(projectId, options = {}) {
+  try {
+    if (!options.body) {
+      console.error('❌ --body is required');
+      process.exit(1);
+    }
+
+    if (options.health && !VALID_HEALTH_VALUES.includes(options.health)) {
+      console.error(`❌ Invalid health value: "${options.health}". Must be one of: ${VALID_HEALTH_VALUES.join(', ')}`);
+      process.exit(1);
+    }
+
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const input = { projectId, body: options.body };
+    if (options.health) input.health = options.health;
+
+    const result = await api.createProjectUpdate(input);
+    const update = result.projectUpdateCreate.projectUpdate;
+
+    console.log(`\n✅ Project update created successfully`);
+    console.log(`  ID:      ${update.id}`);
+    console.log(`  Health:  ${update.health || 'N/A'}`);
+    console.log(`  Body:    ${update.body}`);
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error creating project update:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function editProjectUpdateCommand(updateId, options = {}) {
+  try {
+    const input = {};
+    if (options.body) input.body = options.body;
+    if (options.health) input.health = options.health;
+
+    if (Object.keys(input).length === 0) {
+      console.error('❌ No updates provided. Use --body or --health to update.');
+      process.exit(1);
+    }
+
+    if (options.health && !VALID_HEALTH_VALUES.includes(options.health)) {
+      console.error(`❌ Invalid health value: "${options.health}". Must be one of: ${VALID_HEALTH_VALUES.join(', ')}`);
+      process.exit(1);
+    }
+
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const result = await api.updateProjectUpdate(updateId, input);
+    const update = result.projectUpdateUpdate.projectUpdate;
+
+    console.log(`\n✅ Project update edited successfully`);
+    console.log(`  ID:      ${update.id}`);
+    console.log(`  Health:  ${update.health || 'N/A'}`);
+    console.log(`  Body:    ${update.body}`);
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error editing project update:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function deleteProjectUpdateCommand(updateId, options = {}) {
+  try {
+    const { token } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const result = await api.deleteProjectUpdate(updateId);
+
+    if (result.projectUpdateDelete.success) {
+      console.log(`\n✅ Project update deleted successfully (${updateId})`);
+    } else {
+      console.error('❌ Failed to delete project update');
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error('❌ Error deleting project update:', error.message);
+    process.exit(1);
+  }
+}

@@ -250,6 +250,153 @@ export class LinearAPI {
     return await this.query(query, variables);
   }
 
+  async getProject(projectId) {
+    const query = `
+      query GetProject($projectId: String!) {
+        project(id: $projectId) {
+          id
+          name
+          description
+          state
+          lead {
+            name
+            email
+          }
+          teams {
+            nodes {
+              name
+            }
+          }
+          startDate
+          targetDate
+          createdAt
+          updatedAt
+          url
+        }
+      }
+    `;
+
+    return await this.query(query, { projectId });
+  }
+
+  async createProject(input) {
+    const mutation = `
+      mutation CreateProject($input: ProjectCreateInput!) {
+        projectCreate(input: $input) {
+          success
+          project {
+            id
+            name
+            description
+            url
+          }
+        }
+      }
+    `;
+
+    return await this.query(mutation, { input });
+  }
+
+  async updateProject(projectId, input) {
+    const mutation = `
+      mutation UpdateProject($projectId: String!, $input: ProjectUpdateInput!) {
+        projectUpdate(id: $projectId, input: $input) {
+          success
+          project {
+            id
+            name
+            description
+            url
+          }
+        }
+      }
+    `;
+
+    return await this.query(mutation, { projectId, input });
+  }
+
+  async getProjectUpdates(projectId) {
+    const query = `
+      query GetProjectUpdates($projectId: String!) {
+        project(id: $projectId) {
+          id
+          name
+          projectUpdates {
+            nodes {
+              id
+              body
+              health
+              createdAt
+              updatedAt
+              user {
+                name
+                email
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    return await this.query(query, { projectId });
+  }
+
+  async createProjectUpdate(input) {
+    const mutation = `
+      mutation CreateProjectUpdate($input: ProjectUpdateCreateInput!) {
+        projectUpdateCreate(input: $input) {
+          success
+          projectUpdate {
+            id
+            body
+            health
+            createdAt
+            user {
+              name
+              email
+            }
+          }
+        }
+      }
+    `;
+
+    return await this.query(mutation, { input });
+  }
+
+  async updateProjectUpdate(updateId, input) {
+    const mutation = `
+      mutation UpdateProjectUpdate($updateId: String!, $input: ProjectUpdateUpdateInput!) {
+        projectUpdateUpdate(id: $updateId, input: $input) {
+          success
+          projectUpdate {
+            id
+            body
+            health
+            updatedAt
+            user {
+              name
+              email
+            }
+          }
+        }
+      }
+    `;
+
+    return await this.query(mutation, { updateId, input });
+  }
+
+  async deleteProjectUpdate(updateId) {
+    const mutation = `
+      mutation DeleteProjectUpdate($updateId: String!) {
+        projectUpdateDelete(id: $updateId) {
+          success
+        }
+      }
+    `;
+
+    return await this.query(mutation, { updateId });
+  }
+
   async createIssue(input) {
     const mutation = `
       mutation CreateIssue($input: IssueCreateInput!) {
