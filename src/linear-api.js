@@ -269,6 +269,27 @@ export class LinearAPI {
     return await this.query(mutation, { input });
   }
 
+  async getUsers(options = {}) {
+    const query = `
+      query GetUsers($first: Int) {
+        users(first: $first) {
+          nodes {
+            id
+            name
+            email
+            active
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      first: options.limit || 50
+    };
+
+    return await this.query(query, variables);
+  }
+
   async getTeams(options = {}) {
     const query = `
       query GetTeams($first: Int) {

@@ -6,6 +6,7 @@ import { viewIssueCommand, editIssueCommand, createIssueCommand } from '../src/c
 import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
 import { viewProjectsCommand } from '../src/commands/projects.js';
 import { viewTeamsCommand } from '../src/commands/teams.js';
+import { listUsersCommand } from '../src/commands/users.js';
 import { listWorkspacesCommand, currentWorkspaceCommand, setWorkspaceCommand } from '../src/commands/workspace.js';
 import { changelogCommand } from '../src/commands/changelog.js';
 import { WorkspaceManager } from '../src/workspace.js';
@@ -169,6 +170,24 @@ teamsCommand
       limit: parseInt(options.limit, 10)
     };
     await viewTeamsCommand(combinedOptions);
+  });
+
+const userCommand = program
+  .command('user')
+  .description('User management commands');
+
+userCommand
+  .command('list')
+  .description('List all users in the workspace')
+  .option('--limit <number>', 'Limit number of users shown', '50')
+  .action(async (options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = {
+      ...options,
+      workspace: globalOptions.workspace,
+      limit: parseInt(options.limit, 10)
+    };
+    await listUsersCommand(combinedOptions);
   });
 
 program
