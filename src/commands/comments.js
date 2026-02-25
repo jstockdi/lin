@@ -27,7 +27,7 @@ export async function viewCommentsCommand(issueIdentifier, options = {}) {
     const { token, workspace } = await ensureAuthenticated(options.workspace);
     const api = new LinearAPI(token);
     
-    const searchResult = await api.searchIssues(issueIdentifier);
+    const searchResult = await api.getIssueByIdentifier(issueIdentifier);
     
     if (!searchResult.issues.nodes.length) {
       console.error(`❌ Issue ${issueIdentifier} not found.`);
@@ -70,7 +70,7 @@ export async function addCommentCommand(issueIdentifier, commentBody, options = 
     const { token, workspace } = await ensureAuthenticated(options.workspace);
     const api = new LinearAPI(token);
     
-    const searchResult = await api.searchIssues(issueIdentifier);
+    const searchResult = await api.getIssueByIdentifier(issueIdentifier);
     
     if (!searchResult.issues.nodes.length) {
       console.error(`❌ Issue ${issueIdentifier} not found.`);
