@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { loginCommand } from '../src/commands/login.js';
-import { viewIssueCommand, editIssueCommand, createIssueCommand } from '../src/commands/issue.js';
+import { viewIssueCommand, editIssueCommand, createIssueCommand, searchIssueCommand } from '../src/commands/issue.js';
 import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
 import { viewProjectsCommand, createProjectCommand, viewProjectCommand, editProjectCommand, listProjectUpdatesCommand, addProjectUpdateCommand, editProjectUpdateCommand, deleteProjectUpdateCommand } from '../src/commands/projects.js';
 import { viewTeamsCommand } from '../src/commands/teams.js';
@@ -74,6 +74,25 @@ issueCommand
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };
     await createIssueCommand(options.title, combinedOptions);
+  });
+
+issueCommand
+  .command('search')
+  .description('Search issues by text and/or filters')
+  .argument('[query]', 'Text to search for')
+  .option('--project-id <projectId>', 'Filter by project ID')
+  .option('--team-id <teamId>', 'Filter by team ID')
+  .option('--assignee-id <assigneeId>', 'Filter by assignee ID')
+  .option('--status <status>', 'Filter by status name (e.g., "In Progress")')
+  .option('--limit <number>', 'Maximum number of results', '20')
+  .action(async (query, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = {
+      ...options,
+      workspace: globalOptions.workspace,
+      limit: parseInt(options.limit, 10)
+    };
+    await searchIssueCommand(query, combinedOptions);
   });
 
 const commentCommand = program

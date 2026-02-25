@@ -27,7 +27,7 @@ export async function viewIssueCommand(issueIdentifier, options = {}) {
     const { token, workspace } = await ensureAuthenticated(options.workspace);
     const api = new LinearAPI(token);
     
-    const result = await api.searchIssues(issueIdentifier);
+    const result = await api.getIssueByIdentifier(issueIdentifier);
     
     if (!result.issues.nodes.length) {
       console.error(`❌ Issue ${issueIdentifier} not found.`);
@@ -62,7 +62,7 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
     const { token, workspace } = await ensureAuthenticated(options.workspace);
     const api = new LinearAPI(token);
     
-    const searchResult = await api.searchIssues(issueIdentifier);
+    const searchResult = await api.getIssueByIdentifier(issueIdentifier);
     
     if (!searchResult.issues.nodes.length) {
       console.error(`❌ Issue ${issueIdentifier} not found.`);
@@ -94,7 +94,7 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
     
     if (options.parentId) {
       // Resolve parent issue identifier to UUID
-      const parentResult = await api.searchIssues(options.parentId);
+      const parentResult = await api.getIssueByIdentifier(options.parentId);
       if (!parentResult.issues.nodes.length) {
         console.error(`❌ Parent issue ${options.parentId} not found.`);
         process.exit(1);
@@ -165,6 +165,98 @@ export async function editIssueCommand(issueIdentifier, options = {}) {
   }
 }
 
+export async function searchIssueCommand(query, options = {}) {
+  try {
+    const { token, workspace } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const hasQuery = query && query.trim().length > 0;
+    const hasFilter = options.projectId || options.teamId || options.assigneeId || options.status;
+
+    if (!hasQuery && !hasFilter) {
+      console.error('❌ Provide a search query or at least one filter (--project-id, --team-id, --assignee-id, --status).');
+      process.exit(1);
+    }
+
+    const filter = {};
+    if (options.projectId) filter.project = { id: { eq: options.projectId } };
+    if (options.teamId) filter.team = { id: { eq: options.teamId } };
+    if (options.assigneeId) filter.assignee = { id: { eq: options.assigneeId } };
+    if (options.status) filter.state = { name: { eq: options.status } };
+
+    const apiOptions = { limit: options.limit || 20 };
+    if (Object.keys(filter).length > 0) apiOptions.filter = filter;
+
+    const issues = hasQuery
+      ? await api.issueSearch(query, apiOptions)
+      : await api.issueList(apiOptions);
+
+    if (!issues.length) {
+      console.log(`No issues found in workspace "${workspace}".`);
+      return;
+    }
+
+    const priorityNames = ['None', 'Urgent', 'High', 'Medium', 'Low'];
+
+    console.log(`\n🔍 Issues [${workspace}]`);
+    console.log('');
+
+    const idHeader = 'ID';
+    const titleHeader = 'Title';
+    const statusHeader = 'Status';
+    const assigneeHeader = 'Assignee';
+    const priorityHeader = 'Priority';
+    const teamHeader = 'Team';
+
+    const truncate = (str, max) => str.length > max ? str.slice(0, max - 1) + '…' : str;
+
+    const rows = issues.map(issue => ({
+      id: issue.identifier,
+      title: truncate(issue.title, 50),
+      status: issue.state?.name || '—',
+      assignee: issue.assignee?.name || 'Unassigned',
+      priority: priorityNames[issue.priority] || 'None',
+      team: issue.team?.key || '—'
+    }));
+
+    const idWidth = Math.max(idHeader.length, ...rows.map(r => r.id.length));
+    const titleWidth = Math.max(titleHeader.length, ...rows.map(r => r.title.length));
+    const statusWidth = Math.max(statusHeader.length, ...rows.map(r => r.status.length));
+    const assigneeWidth = Math.max(assigneeHeader.length, ...rows.map(r => r.assignee.length));
+    const priorityWidth = Math.max(priorityHeader.length, ...rows.map(r => r.priority.length));
+    const teamWidth = Math.max(teamHeader.length, ...rows.map(r => r.team.length));
+
+    const sep = '    ';
+    console.log(
+      idHeader.padEnd(idWidth) + sep +
+      titleHeader.padEnd(titleWidth) + sep +
+      statusHeader.padEnd(statusWidth) + sep +
+      assigneeHeader.padEnd(assigneeWidth) + sep +
+      priorityHeader.padEnd(priorityWidth) + sep +
+      teamHeader.padEnd(teamWidth)
+    );
+    console.log('─'.repeat(idWidth + titleWidth + statusWidth + assigneeWidth + priorityWidth + teamWidth + sep.length * 5));
+
+    rows.forEach(r => {
+      console.log(
+        r.id.padEnd(idWidth) + sep +
+        r.title.padEnd(titleWidth) + sep +
+        r.status.padEnd(statusWidth) + sep +
+        r.assignee.padEnd(assigneeWidth) + sep +
+        r.priority.padEnd(priorityWidth) + sep +
+        r.team.padEnd(teamWidth)
+      );
+    });
+
+    console.log('');
+    console.log(`Found ${issues.length} issue${issues.length === 1 ? '' : 's'}`);
+
+  } catch (error) {
+    console.error('❌ Error searching issues:', error.message);
+    process.exit(1);
+  }
+}
+
 export async function createIssueCommand(title, options = {}) {
   try {
     const { token, workspace } = await ensureAuthenticated(options.workspace);
@@ -198,7 +290,7 @@ export async function createIssueCommand(title, options = {}) {
     
     if (options.parentId) {
       // Resolve parent issue identifier to UUID
-      const parentResult = await api.searchIssues(options.parentId);
+      const parentResult = await api.getIssueByIdentifier(options.parentId);
       if (!parentResult.issues.nodes.length) {
         console.error(`❌ Parent issue ${options.parentId} not found.`);
         process.exit(1);

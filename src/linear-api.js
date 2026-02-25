@@ -37,37 +37,6 @@ export class LinearAPI {
     }
   }
 
-  async getIssue(issueId) {
-    const query = `
-      query GetIssue($issueId: String!) {
-        issue(id: $issueId) {
-          id
-          identifier
-          title
-          description
-          priority
-          state {
-            name
-            type
-          }
-          assignee {
-            name
-            email
-          }
-          creator {
-            name
-            email
-          }
-          createdAt
-          updatedAt
-          url
-        }
-      }
-    `;
-
-    return await this.query(query, { issueId });
-  }
-
   async getIssueComments(issueId) {
     const query = `
       query GetIssueComments($issueId: String!) {
@@ -124,9 +93,9 @@ export class LinearAPI {
     return await this.query(mutation, { issueId, input });
   }
 
-  async searchIssues(identifier) {
+  async getIssueByIdentifier(identifier) {
     const query = `
-      query SearchIssues($identifier: String!) {
+      query GetIssueByIdentifier($identifier: String!) {
         issue(id: $identifier) {
           id
           identifier
@@ -163,6 +132,63 @@ export class LinearAPI {
         nodes: result.issue ? [result.issue] : []
       }
     };
+  }
+
+  async issueSearch(term, options = {}) {
+    const gqlQuery = `
+      query SearchIssues($term: String!, $first: Int, $filter: IssueFilter) {
+        searchIssues(term: $term, first: $first, filter: $filter) {
+          nodes {
+            id
+            identifier
+            title
+            state { name }
+            assignee { name }
+            team { key }
+            priority
+            createdAt
+            url
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      term,
+      first: options.limit || 20
+    };
+    if (options.filter) variables.filter = options.filter;
+
+    const result = await this.query(gqlQuery, variables);
+    return result.searchIssues.nodes;
+  }
+
+  async issueList(options = {}) {
+    const gqlQuery = `
+      query IssueList($first: Int, $filter: IssueFilter) {
+        issues(first: $first, filter: $filter) {
+          nodes {
+            id
+            identifier
+            title
+            state { name }
+            assignee { name }
+            team { key }
+            priority
+            createdAt
+            url
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      first: options.limit || 20
+    };
+    if (options.filter) variables.filter = options.filter;
+
+    const result = await this.query(gqlQuery, variables);
+    return result.issues.nodes;
   }
 
   async createComment(issueId, body) {
@@ -257,6 +283,7 @@ export class LinearAPI {
           id
           name
           description
+          content
           state
           lead {
             name

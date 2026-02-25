@@ -145,10 +145,12 @@ export async function viewProjectCommand(projectId, options = {}) {
     console.log(`  Created:     ${new Date(project.createdAt).toLocaleDateString()}`);
     console.log(`  Updated:     ${new Date(project.updatedAt).toLocaleDateString()}`);
     console.log(`  URL:         ${project.url}`);
-    if (project.description) {
+    const descriptionText = project.content || project.description;
+    if (descriptionText) {
       console.log('');
       console.log(`  Description:`);
-      console.log(`  ${project.description}`);
+      const indented = descriptionText.split('\n').map(line => `  ${line}`).join('\n');
+      console.log(indented);
     }
     console.log('');
   } catch (error) {
