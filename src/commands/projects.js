@@ -159,14 +159,30 @@ export async function viewProjectCommand(projectId, options = {}) {
   }
 }
 
+function readStdin() {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    process.stdin.setEncoding('utf-8');
+    process.stdin.on('data', chunk => { data += chunk; });
+    process.stdin.on('end', () => resolve(data));
+    process.stdin.on('error', reject);
+  });
+}
+
 export async function editProjectCommand(projectId, options = {}) {
   try {
     const input = {};
     if (options.name) input.name = options.name;
-    if (options.description) input.description = options.description;
+
+    if (options.description === '-') {
+      input.content = await readStdin();
+    } else if (options.description) {
+      input.content = options.description;
+    }
 
     if (Object.keys(input).length === 0) {
       console.error('❌ No updates provided. Use --name or --description to update the project.');
+      console.error('   Pipe markdown via stdin: cat desc.md | lin project edit <id> --description -');
       process.exit(1);
     }
 
@@ -179,7 +195,6 @@ export async function editProjectCommand(projectId, options = {}) {
     console.log(`\n✅ Project updated successfully`);
     console.log(`  Name:  ${project.name}`);
     console.log(`  ID:    ${project.id}`);
-    if (project.description) console.log(`  Desc:  ${project.description}`);
     console.log(`  URL:   ${project.url}`);
     console.log('');
   } catch (error) {
