@@ -89,6 +89,7 @@ export class LinearAPI {
     if (updates.priority !== undefined) input.priority = updates.priority;
     if (updates.assigneeId) input.assigneeId = updates.assigneeId;
     if (updates.parentId) input.parentId = updates.parentId;
+    if (updates.stateId) input.stateId = updates.stateId;
 
     return await this.query(mutation, { issueId, input });
   }
@@ -483,6 +484,26 @@ export class LinearAPI {
     };
 
     return await this.query(query, variables);
+  }
+
+  async getWorkflowStates(teamId) {
+    const query = `
+      query GetWorkflowStates($teamId: String!) {
+        team(id: $teamId) {
+          states {
+            nodes {
+              id
+              name
+              type
+              position
+              color
+            }
+          }
+        }
+      }
+    `;
+
+    return await this.query(query, { teamId });
   }
 
   async uploadFile(filePath) {

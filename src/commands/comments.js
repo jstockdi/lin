@@ -1,6 +1,16 @@
+import path from 'path';
 import { LinearAuth } from '../auth.js';
 import { LinearAPI } from '../linear-api.js';
 import { WorkspaceManager } from '../workspace.js';
+
+function buildMarkdownLink(fileName, url) {
+  const imageExts = ['.png', '.jpg', '.jpeg', '.gif'];
+  const ext = path.extname(fileName).toLowerCase();
+  if (imageExts.includes(ext)) {
+    return `![${fileName}](${url})`;
+  }
+  return `[${fileName}](${url})`;
+}
 
 async function ensureAuthenticated(workspace) {
   const workspaceManager = new WorkspaceManager();
@@ -78,7 +88,35 @@ export async function addCommentCommand(issueIdentifier, commentBody, options = 
     }
     
     const issue = searchResult.issues.nodes[0];
-    
+
+    // Handle file attachment
+    if (options.attachment) {
+      try {
+        console.log(`📎 Uploading attachment: ${options.attachment}`);
+        const assetUrl = await api.uploadFile(options.attachment);
+        const fileName = path.basename(options.attachment);
+        console.log('✅ File uploaded successfully!');
+
+        console.log(`📎 Creating attachment: ${fileName}`);
+        const attachmentResult = await api.createAttachment(issue.id, assetUrl, fileName, {
+          subtitle: 'Uploaded via Linear CLI'
+        });
+
+        if (attachmentResult.attachmentCreate.success) {
+          console.log('✅ Attachment created successfully!');
+        } else {
+          console.error('❌ Failed to create attachment in Linear');
+        }
+
+        // Append markdown link to comment body
+        const markdownLink = buildMarkdownLink(fileName, assetUrl);
+        commentBody = `${commentBody}\n\n${markdownLink}`;
+      } catch (error) {
+        console.error(`❌ Failed to upload attachment: ${error.message}`);
+        process.exit(1);
+      }
+    }
+
     console.log(`Adding comment to ${issue.identifier} in workspace ${workspace}...`);
     const result = await api.createComment(issue.id, commentBody);
     
@@ -104,7 +142,25 @@ export async function editCommentCommand(commentId, commentBody, options = {}) {
   try {
     const { token, workspace } = await ensureAuthenticated(options.workspace);
     const api = new LinearAPI(token);
-    
+
+    // Handle file attachment
+    if (options.attachment) {
+      try {
+        console.log(`📎 Uploading attachment: ${options.attachment}`);
+        const assetUrl = await api.uploadFile(options.attachment);
+        const fileName = path.basename(options.attachment);
+        console.log('✅ File uploaded successfully!');
+
+        // Note: createAttachment requires an issue ID; we don't have one for comment edit.
+        // The file is still uploaded and linked inline in the comment body.
+        const markdownLink = buildMarkdownLink(fileName, assetUrl);
+        commentBody = `${commentBody}\n\n${markdownLink}`;
+      } catch (error) {
+        console.error(`❌ Failed to upload attachment: ${error.message}`);
+        process.exit(1);
+      }
+    }
+
     console.log(`Updating comment ${commentId} in workspace ${workspace}...`);
     const result = await api.updateComment(commentId, commentBody);
     

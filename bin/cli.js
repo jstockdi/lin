@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { loginCommand } from '../src/commands/login.js';
-import { viewIssueCommand, editIssueCommand, createIssueCommand, searchIssueCommand } from '../src/commands/issue.js';
+import { viewIssueCommand, editIssueCommand, createIssueCommand, searchIssueCommand, stateIssueCommand } from '../src/commands/issue.js';
 import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
 import { viewProjectsCommand, createProjectCommand, viewProjectCommand, editProjectCommand, listProjectUpdatesCommand, addProjectUpdateCommand, editProjectUpdateCommand, deleteProjectUpdateCommand } from '../src/commands/projects.js';
 import { viewTeamsCommand } from '../src/commands/teams.js';
@@ -70,6 +70,7 @@ issueCommand
   .option('--assignee-id <assigneeId>', 'User ID to assign the issue to')
   .option('--priority <priority>', 'Issue priority (1-4, where 1 is urgent)')
   .option('--parent-id <parentId>', 'Parent issue ID (APP-123) to create this as a sub-issue. Not UUID')
+  .option('--attachment <filePath>', 'Upload and attach a file to the issue')
   .action(async (options, command) => {
     const globalOptions = command.parent.parent.opts();
     const combinedOptions = { ...options, workspace: globalOptions.workspace };
@@ -95,6 +96,18 @@ issueCommand
     await searchIssueCommand(query, combinedOptions);
   });
 
+issueCommand
+  .command('state')
+  .description('Change issue state or list available states')
+  .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
+  .argument('[state-name]', 'Target state name (e.g., "In Progress")')
+  .option('--list', 'List available states for the issue\'s team')
+  .action(async (issueId, stateName, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    const combinedOptions = { ...options, workspace: globalOptions.workspace };
+    await stateIssueCommand(issueId, stateName, combinedOptions);
+  });
+
 const commentCommand = program
   .command('comment')
   .description('Comment management commands');
@@ -115,9 +128,10 @@ commentCommand
   .description('Add a comment to an issue')
   .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
   .argument('<comment>', 'Comment text (supports markdown)')
+  .option('--attachment <filePath>', 'Upload a file and include it in the comment')
   .action(async (issueId, comment, options, command) => {
     const globalOptions = command.parent.parent.opts();
-    await addCommentCommand(issueId, comment, { workspace: globalOptions.workspace });
+    await addCommentCommand(issueId, comment, { ...options, workspace: globalOptions.workspace });
   });
 
 commentCommand
@@ -125,9 +139,10 @@ commentCommand
   .description('Edit an existing comment')
   .argument('<comment-id>', 'Comment ID (use "comment view --show-ids" to find IDs)')
   .argument('<comment>', 'Updated comment text (supports markdown)')
+  .option('--attachment <filePath>', 'Upload a file and include it in the comment')
   .action(async (commentId, comment, options, command) => {
     const globalOptions = command.parent.parent.opts();
-    await editCommentCommand(commentId, comment, { workspace: globalOptions.workspace });
+    await editCommentCommand(commentId, comment, { ...options, workspace: globalOptions.workspace });
   });
 
 const workspaceCommand = program

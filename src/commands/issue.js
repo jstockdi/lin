@@ -1,6 +1,16 @@
+import path from 'path';
 import { LinearAuth } from '../auth.js';
 import { LinearAPI } from '../linear-api.js';
 import { WorkspaceManager } from '../workspace.js';
+
+function buildMarkdownLink(fileName, url) {
+  const imageExts = ['.png', '.jpg', '.jpeg', '.gif'];
+  const ext = path.extname(fileName).toLowerCase();
+  if (imageExts.includes(ext)) {
+    return `![${fileName}](${url})`;
+  }
+  return `[${fileName}](${url})`;
+}
 
 async function ensureAuthenticated(workspace) {
   const workspaceManager = new WorkspaceManager();
@@ -310,6 +320,36 @@ export async function createIssueCommand(title, options = {}) {
       if (issue.description) {
         console.log(`Description: ${issue.description}`);
       }
+
+      // Handle file attachment after issue creation
+      if (options.attachment) {
+        try {
+          console.log(`📎 Uploading attachment: ${options.attachment}`);
+          const assetUrl = await api.uploadFile(options.attachment);
+          const fileName = path.basename(options.attachment);
+          console.log('✅ File uploaded successfully!');
+
+          console.log(`📎 Creating attachment: ${fileName}`);
+          const attachmentResult = await api.createAttachment(issue.id, assetUrl, fileName, {
+            subtitle: 'Uploaded via Linear CLI'
+          });
+
+          if (attachmentResult.attachmentCreate.success) {
+            console.log('✅ Attachment created successfully!');
+          } else {
+            console.error('❌ Failed to create attachment in Linear');
+          }
+
+          // Embed link inline in description
+          const markdownLink = buildMarkdownLink(fileName, assetUrl);
+          const updatedDescription = issue.description
+            ? `${issue.description}\n\n${markdownLink}`
+            : markdownLink;
+          await api.updateIssue(issue.id, { description: updatedDescription });
+        } catch (error) {
+          console.error(`❌ Failed to upload attachment: ${error.message}`);
+        }
+      }
     } else {
       console.error('❌ Failed to create issue.');
       process.exit(1);
@@ -317,6 +357,87 @@ export async function createIssueCommand(title, options = {}) {
     
   } catch (error) {
     console.error('❌ Error creating issue:', error.message);
+    process.exit(1);
+  }
+}
+
+export async function stateIssueCommand(issueIdentifier, stateName, options = {}) {
+  try {
+    const { token, workspace } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const searchResult = await api.getIssueByIdentifier(issueIdentifier);
+
+    if (!searchResult.issues.nodes.length) {
+      console.error(`❌ Issue ${issueIdentifier} not found.`);
+      process.exit(1);
+    }
+
+    const issue = searchResult.issues.nodes[0];
+    const statesResult = await api.getWorkflowStates(issue.team.id);
+    const states = statesResult.team.states.nodes
+      .sort((a, b) => a.position - b.position);
+
+    // --list: show available states and exit
+    if (options.list) {
+      console.log(`\n📋 Available states for team ${issue.team.name} (${issue.team.key}) [${workspace}]:\n`);
+
+      const typeOrder = ['triage', 'backlog', 'unstarted', 'started', 'completed', 'cancelled'];
+      const grouped = {};
+      states.forEach(s => {
+        const type = s.type || 'other';
+        if (!grouped[type]) grouped[type] = [];
+        grouped[type].push(s);
+      });
+
+      typeOrder.forEach(type => {
+        if (!grouped[type]) return;
+        console.log(`  ${type.charAt(0).toUpperCase() + type.slice(1)}:`);
+        grouped[type].forEach(s => {
+          const current = issue.state?.name === s.name ? ' ← current' : '';
+          console.log(`    • ${s.name}${current}`);
+        });
+      });
+
+      // Any types not in typeOrder
+      Object.keys(grouped).forEach(type => {
+        if (typeOrder.includes(type)) return;
+        console.log(`  ${type}:`);
+        grouped[type].forEach(s => {
+          const current = issue.state?.name === s.name ? ' ← current' : '';
+          console.log(`    • ${s.name}${current}`);
+        });
+      });
+
+      return;
+    }
+
+    if (!stateName) {
+      console.error('❌ State name is required. Use --list to see available states.');
+      process.exit(1);
+    }
+
+    // Case-insensitive match
+    const match = states.find(s => s.name.toLowerCase() === stateName.toLowerCase());
+
+    if (!match) {
+      console.error(`❌ State "${stateName}" not found. Available states:`);
+      states.forEach(s => console.error(`    • ${s.name}`));
+      process.exit(1);
+    }
+
+    console.log(`Updating ${issue.identifier} state to "${match.name}" in workspace ${workspace}...`);
+    const result = await api.updateIssue(issue.id, { stateId: match.id });
+
+    if (result.issueUpdate.success) {
+      console.log(`✅ ${issue.identifier} → ${match.name}`);
+    } else {
+      console.error('❌ Failed to update issue state.');
+      process.exit(1);
+    }
+
+  } catch (error) {
+    console.error('❌ Error updating issue state:', error.message);
     process.exit(1);
   }
 }
