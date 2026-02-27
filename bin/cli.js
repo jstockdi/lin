@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { loginCommand } from '../src/commands/login.js';
-import { viewIssueCommand, editIssueCommand, createIssueCommand, searchIssueCommand, stateIssueCommand } from '../src/commands/issue.js';
+import { viewIssueCommand, editIssueCommand, createIssueCommand, searchIssueCommand, stateIssueCommand, attachmentsIssueCommand } from '../src/commands/issue.js';
 import { viewCommentsCommand, addCommentCommand, editCommentCommand } from '../src/commands/comments.js';
 import { viewProjectsCommand, createProjectCommand, viewProjectCommand, editProjectCommand, listProjectUpdatesCommand, addProjectUpdateCommand, editProjectUpdateCommand, deleteProjectUpdateCommand } from '../src/commands/projects.js';
 import { viewTeamsCommand } from '../src/commands/teams.js';
@@ -94,6 +94,15 @@ issueCommand
       limit: parseInt(options.limit, 10)
     };
     await searchIssueCommand(query, combinedOptions);
+  });
+
+issueCommand
+  .command('attachments')
+  .description('List attachments for an issue')
+  .argument('<issue-id>', 'Issue identifier (e.g., APP-701)')
+  .action(async (issueId, options, command) => {
+    const globalOptions = command.parent.parent.opts();
+    await attachmentsIssueCommand(issueId, { workspace: globalOptions.workspace });
   });
 
 issueCommand

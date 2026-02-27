@@ -361,6 +361,40 @@ export async function createIssueCommand(title, options = {}) {
   }
 }
 
+export async function attachmentsIssueCommand(issueIdentifier, options = {}) {
+  try {
+    const { token, workspace } = await ensureAuthenticated(options.workspace);
+    const api = new LinearAPI(token);
+
+    const result = await api.getIssueAttachments(issueIdentifier);
+
+    if (!result.issue) {
+      console.error(`❌ Issue ${issueIdentifier} not found.`);
+      process.exit(1);
+    }
+
+    const attachments = result.issue.attachments.nodes;
+
+    if (!attachments.length) {
+      console.log(`📎 No attachments found for ${issueIdentifier}.`);
+      return;
+    }
+
+    console.log(`\n📎 Attachments for ${issueIdentifier} (${attachments.length}):\n`);
+
+    const titleWidth = Math.max(5, ...attachments.map(a => a.title.length));
+
+    attachments.forEach(a => {
+      console.log(`  ${a.title.padEnd(titleWidth)}  ${a.url}`);
+    });
+
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error fetching attachments:', error.message);
+    process.exit(1);
+  }
+}
+
 export async function stateIssueCommand(issueIdentifier, stateName, options = {}) {
   try {
     const { token, workspace } = await ensureAuthenticated(options.workspace);

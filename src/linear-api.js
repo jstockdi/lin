@@ -578,6 +578,27 @@ export class LinearAPI {
     }
   }
 
+  async getIssueAttachments(issueIdentifier) {
+    const query = `
+      query GetIssueAttachments($id: String!) {
+        issue(id: $id) {
+          id
+          identifier
+          attachments {
+            nodes {
+              id
+              title
+              url
+              createdAt
+            }
+          }
+        }
+      }
+    `;
+
+    return await this.query(query, { id: issueIdentifier });
+  }
+
   async createAttachment(issueId, url, title, options = {}) {
     const mutation = `
       mutation CreateAttachment($input: AttachmentCreateInput!) {
